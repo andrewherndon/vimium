@@ -169,6 +169,17 @@ const allCommands = [
   },
 
   {
+    name: "Flash.activateMode",
+    desc: "Type text, then label & select a match in visual mode",
+    options: {
+      autojump: "Optional. When `true`, jump as soon as a single match remains.",
+      max: "Optional. The maximum number of matches to label (default 200).",
+    },
+    group: "navigation",
+    noRepeat: true,
+  },
+
+  {
     name: "passNextKey",
     desc: "Pass the next key to the page",
     options: {

@@ -1313,3 +1313,72 @@ context("GrabBackFocus", () => {
     assert.isTrue(DomUtils.isEditable(document.activeElement));
   });
 });
+
+//
+// Flash mode.
+//
+
+const flashMarkerEls = () =>
+  Array.from(document.querySelectorAll("#vimium-flash-marker-container .vimiumHintMarker"));
+
+const visibleFlashMarkerEls = () => flashMarkerEls().filter((el) => el.style.display !== "none");
+
+const flashHighlightEls = () =>
+  Array.from(document.querySelectorAll("#vimium-flash-marker-container .vimium-flash-highlight"));
+
+context("Flash mode", () => {
+  let flash;
+
+  setup(() => {
+    initializeModeState();
+    // "zzq" is a distinctive token, so the query can't accidentally match text elsewhere on the
+    // test page. It appears 3 times; extending the query to "zzqz" leaves a single match.
+    document.getElementById("test-div").innerHTML = "<p>zzq zzqz</p><p>zzq</p>";
+    stubSettings("linkHintCharacters", "ab");
+    flash = Flash.activateMode(1, {});
+  });
+
+  teardown(() => {
+    if (flash.mode.modeIsActive) flash.mode.exit();
+    document.getElementById("test-div").innerHTML = "";
+    globalThis.getSelection().removeAllRanges();
+  });
+
+  should("highlight and label every visible match of the query", () => {
+    sendKeyboardEvents("zzq");
+    assert.equal(3, flashMarkerEls().length);
+    assert.equal(3, flashHighlightEls().length);
+  });
+
+  should("narrow the matches as the query is extended", () => {
+    sendKeyboardEvents("zzq");
+    assert.equal(3, flashMarkerEls().length);
+    sendKeyboardEvent("z"); // "zzqz" -> a single match
+    assert.equal(1, flashMarkerEls().length);
+  });
+
+  should("restore the previous query on backspace", () => {
+    sendKeyboardEvents("zzqz");
+    assert.equal(1, flashMarkerEls().length);
+    sendKeyboardEvent("Backspace");
+    assert.equal(3, flashMarkerEls().length); // back to "zzq"
+  });
+
+  should("hide labels which don't match the typed label keys", () => {
+    sendKeyboardEvents("zzq");
+    assert.equal(3, visibleFlashMarkerEls().length);
+    // "a" can't extend the query (there's no "zzqa"), so it's treated as a label key. With hint
+    // strings ["aa", "ab", "b"], only the two starting with "a" remain visible.
+    sendKeyboardEvent("a");
+    assert.equal(2, visibleFlashMarkerEls().length);
+    assert.equal(3, flashMarkerEls().length); // the third is hidden, not removed
+  });
+
+  should("select the match and exit flash on Enter", () => {
+    sendKeyboardEvents("zzq");
+    sendKeyboardEvent("Enter");
+    assert.equal("zzq", globalThis.getSelection().toString());
+    assert.isFalse(flash.mode.modeIsActive);
+    assert.equal(null, document.querySelector("#vimium-flash-marker-container"));
+  });
+});

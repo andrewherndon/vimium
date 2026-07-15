@@ -23,5 +23,6 @@ import "../content_scripts/mode_find.js";
 import "../content_scripts/mode_key_handler.js";
 import "../content_scripts/mode_visual.js";
 import "../content_scripts/hud.js";
+import "../content_scripts/flash_mode.js";
 import "../content_scripts/mode_normal.js";
 import "../content_scripts/vimium_frontend.js";
